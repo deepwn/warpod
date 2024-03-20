@@ -1,0 +1,14 @@
+<array>
+  <dict>
+    <key>organization</key>
+    <string>ORGANIZATION</string>
+    <key>display_name</key>
+    <string>ORGANIZATION</string>
+    <key>auth_client_id</key>
+    <string>AUTH_CLIENT_ID</string>
+    <key>auth_client_secret</key>
+    <string>AUTH_CLIENT_SECRET</string>
+    <key>onboarding</key>
+	  <false/>
+  </dict>
+</array>
