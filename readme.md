@@ -97,7 +97,7 @@ or you can download `gost.tar.gz` from other source at first. but carefully, you
 
 and you can use `-h` to see more help.
 
-```sh
+```text
 ./autorun.sh -h
 Usage: ./autorun.sh [options]
 Options:
@@ -122,7 +122,7 @@ Example (run after build):
 
 test run with podman on rockylinux 8.9:
 
-```sh
+```text
 podman run -d --name warpod --network warpod \
   -e WARP_ORG_ID=WARP_ORG_ID \
   -e WARP_AUTH_CLIENT_ID=WARP_AUTH_CLIENT_ID \
