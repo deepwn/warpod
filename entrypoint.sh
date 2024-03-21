@@ -131,11 +131,10 @@ else
         # no license, but not registered
         echo "[+] New registration generated ... $(/usr/bin/warp-cli registration new)"
     fi
+    # change the operation mode to proxy and set the port (mdm is not needed in this case, should set mode and port in Zero Trust dashboard.)
+    echo "[+] Set warp mode to proxy ... $(/usr/bin/warp-cli mode proxy)"
+    echo "[+] Set proxy listen to $warp_listen_port ... $(/usr/bin/warp-cli proxy port $warp_listen_port)"
 fi
-
-# change the operation mode to proxy and set the port
-echo "[+] Set warp mode to proxy ... $(/usr/bin/warp-cli mode proxy)"
-echo "[+] Set proxy listen to $warp_listen_port ... $(/usr/bin/warp-cli proxy port $warp_listen_port)"
 
 # wait for warp to connect
 echo "[+] Turn ON warp ... $(/usr/bin/warp-cli connect)"

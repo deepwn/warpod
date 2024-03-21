@@ -74,7 +74,7 @@ but for not break the `entrypoint.sh` flow. plase do **NOT** change this part:
 
 ## MDM settings in cloudflare Zero Trust dashboard
 
-1. create your org team in words range: `[a-zA-Z0-9-_]` and remember your `ORGANIZATION` (set org name to ./secrets).
+1. create your org team in words range: `[a-zA-Z0-9-]` and remember your `ORGANIZATION` (set org name to ./secrets).
 2. create a `Access -> Service Authentication -> Service Token` and get `AUTH_CLIENT_ID` and `AUTH_CLIENT_SECRET` from dashboard. (set to ./secrets)
 3. goto `Settings -> Warp Client -> Device settings` and add a new policy (E.g.: named "mdmPolicy").
 4. into the policy config page, add a rule to let `email` - `is` - `non_identity@[your_org_name].cloudflareaccess.com` in expression.
@@ -85,24 +85,37 @@ but for not break the `entrypoint.sh` flow. plase do **NOT** change this part:
 
 ## Use auto build script to build image
 
-script: [autobuild.sh](./autobuild.sh) required `curl` `wget` `jq` commands.
+script: [autorun.sh](./autorun.sh) required `curl` `wget` `jq` commands.
 
 full auto build image with docker or podman just need you run:
 
 ```sh
-./autobuild.sh
+./autorun.sh -q (quite mode, only build image)
 ```
 
 or you can download `gost.tar.gz` from other source at first. but carefully, you need choose the right `linux_amd64` platform for Dockerfile's base image `ubuntu:22.04`
 
-script args: `proxy` and `tag` is optional, you can run with it if need.
+and you can use `-h` to see more help.
 
-- proxy: `socks://` `http://` or `https://` proxy address support by curl. (optional)
-- tag: the image tag you want to build. (optional, default: `warpod:latest`)
-
-example:
 ```sh
-./autobuild.sh socks5://127.0.0.1:1080 warpod_beta:1.2.3
+./autorun.sh -h
+Usage: ./autorun.sh [options]
+Options:
+  -h, --help      Print this help message
+  -c, --command   Set container runtime command (default: auto select from docker or podman)
+  -t, --tag       Set image tag for warp image (default: warpod:latest)
+  -g, --gost      Download gost binary from specified url (default: from github)
+  -r, --run       Run warpod container after build. it will force renew network and container (default: false)
+  -q, --quiet     Quiet mode (only build image, no input required, and force skip -r option)
+
+Additional:
+  (If need run after build. you can add more options)
+  -n, --hostname  Set hostname and container name (it will register to Zero Trust's Device ID)
+  -p, --ports     Set ports expose (e.g.: -p 1080-1082:1080-1082, to expose to host server)
+  -e, --envs      Set ENV for container (e.g.: -e WARP_LISTEN_PORT=41080 SOME_ENV=VALUE ...)
+
+Example (run after build):
+  ./autorun.sh -t beta-1 -c podman -r -n warpod-beta -p 2080-2082:1080-1082 -e WARP_LISTEN_PORT=21080 --secret WARP_LICENSE=LICENSE
 ```
 
 ## Example
