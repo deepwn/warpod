@@ -9,6 +9,6 @@
     <key>auth_client_secret</key>
     <string>AUTH_CLIENT_SECRET</string>
     <key>onboarding</key>
-	  <false/>
+    <false />
   </dict>
 </array>

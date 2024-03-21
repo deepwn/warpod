@@ -9,8 +9,8 @@ Working with `free` or `warp+` and `zero Trust` network.
   - [Environment Variables](#environment-variables)
   - [Registration auto switch](#registration-auto-switch)
   - [MDM settings in cloudflare Zero Trust dashboard](#mdm-settings-in-cloudflare-zero-trust-dashboard)
-  - [Use auto build script to build image](#use-auto-build-script-to-build-image)
-  - [Example](#example)
+  - [Use script to build image](#use-script-to-build-image)
+  - [Test build and run](#test-build-and-run)
   - [Other](#other)
   - [License](#license)
 
@@ -67,7 +67,7 @@ but for not break the `entrypoint.sh` flow. plase do **NOT** change this part:
     <key>auth_client_secret</key>
     <string>AUTH_CLIENT_SECRET</string>
     <key>onboarding</key>
-	  <false/>
+    <false />
   </dict>
 </array>
 ```
@@ -83,9 +83,9 @@ but for not break the `entrypoint.sh` flow. plase do **NOT** change this part:
 7. then save it.
 
 
-## Use auto build script to build image
+## Use script to build image
 
-script: [autorun.sh](./autorun.sh) required `curl` `wget` `jq` commands.
+script: [autorun.sh](./autorun.sh) required `curl` `wget` `jq` commands, and container runtime `docker` or `podman`.
 
 full auto build image with docker or podman just need you run:
 
@@ -95,7 +95,7 @@ full auto build image with docker or podman just need you run:
 
 or you can download `gost.tar.gz` from other source at first. but carefully, you need choose the right `linux_amd64` platform for Dockerfile's base image `ubuntu:22.04`
 
-and you can use `-h` to see more help.
+and you can use `-h` to see more help. and you can use `-r` to run container after build.
 
 ```text
 ./autorun.sh -h
@@ -118,23 +118,36 @@ Example (run after build):
   ./autorun.sh -t beta-1 -c podman -r -n warpod-beta -p 2080-2082:1080-1082 -e WARP_LISTEN_PORT=21080 --secret WARP_LICENSE=LICENSE
 ```
 
-## Example
+## Test build and run
 
 test run with podman on rockylinux 8.9:
 
 ```text
-podman run -d --name warpod --network warpod \
+# build a test image
+./autorun.sh -q >/dev/null 2>&1
+
+# check image
+podman image ls 
+REPOSITORY                       TAG         IMAGE ID      CREATED       SIZE
+localhost/warpod                 latest      91f2fb3774ab  1 second ago  642 MB
+
+# use env just for test, you can set it in ./secrets
+export WARP_ORG_ID=deepwn
+export WARP_AUTH_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx.access
+export WARP_AUTH_CLIENT_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+
+podman run -d --name warpod --hostname warpod --network warpod \
   -e WARP_ORG_ID=WARP_ORG_ID \
   -e WARP_AUTH_CLIENT_ID=WARP_AUTH_CLIENT_ID \
   -e WARP_AUTH_CLIENT_SECRET=WARP_AUTH_CLIENT_SECRET \
   -p 1080-1082:1080-1082 \
   warpod:latest
   
-  # test in container for warp
-  podman exec -it warpod curl -x socks5://127.0.0.1:41080 http://cloudflare.com/cdn-cgi/trace
+# test in container for warp
+podman exec -it warpod curl -x socks5://127.0.0.1:41080 http://cloudflare.com/cdn-cgi/trace
 
-  # test out container for gost
-  curl -x socks5://127.0.0.1:1080 http://ip-api.com/json
+# test out container for gost
+curl -x socks5://127.0.0.1:1080 http://ip-api.com/json
 ```
 
 and you can see the output like this:
