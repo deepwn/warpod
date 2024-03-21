@@ -183,7 +183,7 @@ gost config: /var/lib/cloudflare-warp/gost.yaml
 
 ## Other
 
-you can remove line `ADD sources.list /etc/apt/sources.list` from Dockerfile if you don't need a apt source mirror by *.edu.cn.
+you can use `ADD sources.list /etc/apt/sources.list` from Dockerfile if you need a apt source mirror by *.edu.cn.
 
 and you can download another version of `gost.tar.gz` by yourself, and put it in the same directory with Dockerfile.
 
