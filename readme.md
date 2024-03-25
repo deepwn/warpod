@@ -9,8 +9,9 @@ Working with `free` or `warp+` and `zero Trust` network.
   - [Environment Variables](#environment-variables)
   - [Registration auto switch](#registration-auto-switch)
   - [MDM settings in cloudflare Zero Trust dashboard](#mdm-settings-in-cloudflare-zero-trust-dashboard)
-  - [Use script to build image](#use-script-to-build-image)
-  - [Test build and run](#test-build-and-run)
+  - [Run with ghcr.io](#run-with-ghcrio)
+  - [Build image locally](#build-image-locally)
+  - [Example](#example)
   - [Other](#other)
   - [License](#license)
 
@@ -82,8 +83,29 @@ but for not break the `entrypoint.sh` flow. plase do **NOT** change this part:
 6. and done other settings if your want.
 7. then save it.
 
+## Run with ghcr.io
 
-## Use script to build image
+```sh
+docker pull ghcr.io/deepwn/warpod:latest
+```
+
+then follow the [Environment Variables](#environment-variables) to run it.
+
+```sh
+docker run -d --name warpod --hostname warpod --network warpod \
+  -e WARP_ORG_ID=WARP_ORG_ID \
+  -e WARP_AUTH_CLIENT_ID=WARP_AUTH_CLIENT_ID \
+  -e WARP_AUTH_CLIENT_SECRET=WARP_AUTH_CLIENT_SECRET \
+  -p 1080-1082:1080-1082 \
+  ghcr.io/deepwn/warpod:latest
+```
+
+to testing to set `WARP_ORG_ID` `WARP_AUTH_CLIENT_ID` `WARP_AUTH_CLIENT_SECRET` in your environment.
+
+but you'd better use `docker secret create` to set it in production.
+
+
+## Build image locally
 
 script: [autorun.sh](./autorun.sh) required `curl` `wget` `jq` commands, and container runtime `docker` or `podman`.
 
@@ -118,13 +140,16 @@ Example (run after build):
   ./autorun.sh -t beta-1 -c podman -r -n warpod-beta -p 2080-2082:1080-1082 -e WARP_LISTEN_PORT=21080 --secret WARP_LICENSE=LICENSE
 ```
 
-## Test build and run
+## Example
 
 test run with podman on rockylinux 8.9:
 
 ```text
 # build a test image
 ./autorun.sh -q >/dev/null 2>&1
+
+# Or download from ghcr.io
+# podman pull ghcr.io/deepwn/warpod:latest
 
 # check image
 podman image ls 
