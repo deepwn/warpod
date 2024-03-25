@@ -102,30 +102,50 @@ done
 
 # if no gost.tar.gz
 if [ ! -f gost.tar.gz ]; then
-    # check curl wget and jq
-    if ! command -v curl &>/dev/null; then
-        echo "[!] Error: curl not found! please install curl or download gost.tar.gz manually."
-        exit 1
-    fi
-    if ! command -v wget &>/dev/null; then
-        echo "[!] Error: wget not found! please install wget or download gost.tar.gz manually."
-        exit 1
-    fi
-    if ! command -v jq &>/dev/null; then
-        echo "[!] Error: jq not found! please install jq or download gost.tar.gz manually."
-        exit 1
-    fi
-
     # download gost.tar.gz
     if [ -z "${gost_url}" ]; then
-        # from github
-        echo "[*] Downloading gost from github ..."
-        curl -fsSL https://api.github.com/repos/go-gost/gost/releases | jq -r '.[0].assets[] | select(.name | test("linux_amd64.tar.gz")) | .browser_download_url' | xargs -n 1 wget -q --show-progress -O gost.tar.gz
+        # for ubuntu22.04
+        os="linux"
+        cpu_arch="amd64"
+        # download from github
+        # source https://github.com/go-gost/gost/blob/master/install.sh
+        repo="go-gost/gost"
+        base_url="https://api.github.com/repos/$repo/releases"
+        versions=$(curl -s "$base_url" | grep -oP 'tag_name": "\K[^"]+')
+        latest_version=$(echo "$versions" | head -n 1)
+        get_download_url="$base_url/tags/$latest_version"
+        download_url=$(curl -fsSL "$get_download_url" | grep -Eo "\"browser_download_url\": \".*${os}.*${cpu_arch}.*\"" | awk -F'["]' '{print $4}' | head -n 1)
+        download_file=$(echo $download_url | awk -F'/' '{print $NF}')
+        # checksums.txt of this release
+        checksums_url=$(echo $download_url | sed 's/gost_.*.tar.gz/checksums.txt/')
+        checksums_hash=$(curl -fsSL $checksums_url | grep $download_file | awk '{print $1}')
     else
         # download from specified url
-        echo "[*] Downloading gost from specified url ..."
-        echo "    ${gost_url}"
-        wget -q --show-progress -O gost.tar.gz "${gost_url}"
+        download_url="${gost_url}"
+    fi
+    echo "[*] Download gost.tar.gz from:"
+    echo "    ${download_url}"
+    # wget or curl
+    if command -v wget &>/dev/null; then
+        wget -q --show-progress -O gost.tar.gz $download_url
+    elif command -v curl &>/dev/null; then
+        echo "    (curl has no progress bar. Please wait...)"
+        curl -fsSL --progress-bar -o gost.tar.gz $download_url
+    fi
+    # check download file hash
+    if [ -n "${checksums_hash}" ]; then
+        echo "[*] Check download file hash..."
+        if command -v sha256sum &>/dev/null; then
+            file_hash=$(sha256sum gost.tar.gz | awk '{print $1}')
+        elif command -v shasum &>/dev/null; then
+            file_hash=$(shasum -a 256 gost.tar.gz | awk '{print $1}')
+        fi
+        if [ "${file_hash}" != "${checksums_hash}" ]; then
+            echo "[!] Error: Download file hash not match!"
+            exit 1
+        else
+            echo "[*] Download file hash pass."
+        fi
     fi
 else
     echo "[*] Skip download. Using local gost.tar.gz ..."
