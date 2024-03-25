@@ -4,7 +4,7 @@ FROM ubuntu:22.04
 # ADD sources.list /etc/apt/sources.list
 
 # install deps
-RUN apt-get update && apt-get -y install curl gnupg2 dbus openssl jq
+RUN apt-get update && apt-get -y install curl gnupg2 dbus
 
 # install warp
 RUN curl -fsSL https://pkg.cloudflareclient.com/pubkey.gpg | gpg --yes --dearmor --output /usr/share/keyrings/cloudflare-warp-archive-keyring.gpg \
