@@ -8,11 +8,10 @@ Working with `free` or `warp+` and `zero Trust` network.
   - [Features](#features)
   - [Environment Variables](#environment-variables)
   - [Registration auto switch](#registration-auto-switch)
-  - [MDM settings in cloudflare Zero Trust dashboard](#mdm-settings-in-cloudflare-zero-trust-dashboard)
+  - [Setting MDM in dashboard](#setting-mdm-in-dashboard)
   - [Run with ghcr.io](#run-with-ghcrio)
   - [Build image locally](#build-image-locally)
-  - [Example](#example)
-  - [Other](#other)
+  - [Example and tips](#example-and-tips)
   - [License](#license)
 
 ## Features
@@ -27,16 +26,17 @@ You can use `PORXY_AUTH` to set a proxy's authentication if need.
 
 ## Environment Variables
 
-- **WARP_ORG_ID** - Your WARP organization ID. (mdm mode)
-- **WARP_AUTH_CLIENT_ID** - Your WARP client ID. (mdm mode)
-- **WARP_AUTH_CLIENT_SECRET** - Your WARP client secret. (mdm mode)
-- **WARP_LICENSE** - Your WARP license key. (optional)
-- **WARP_LISTEN_PORT** - `warp-svc` listen port. (optional, default: 41080)
-- ~~**WARP_LISTEN_ADDR** - `warp-svc` listen address.~~ (not support yet, hardcode to `localhost`)
-- **SOCK_PORT** - `gost` socks5 listen port. (optional, default: 1080)
-- **HTTP_PORT** - `gost` http listen port. (optional, default: 1081)
-- **HTTPS_PORT** - `gost` https listen port. (optional, default: 1082)
-- **PROXY_AUTH** - `gost` proxy's authentication. (optional, E.g. `user:password`)
+- **WARP_ORG_ID** - WARP MDM organization ID. (E.g. `deepwn`)
+- **WARP_AUTH_CLIENT_ID** - WARP MDM client ID. (E.g. `xxxxxxxxxxxxxxxxxxxxxxxxxx.access`)
+- **WARP_AUTH_CLIENT_SECRET** - WARP MDM client secret. (E.g. `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`)
+- **WARP_UNIQUE_CLIENT_ID** - WARP MDM unique client ID. (E.g. `12345678-1234-1234-1234-123456789abc`)
+- **WARP_LICENSE** - WARP MDM license key. (E.g. `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
+- **WARP_LISTEN_PORT** - warp-svc listen port. (default: `41080`)
+- ~~**WARP_LISTEN_ADDR** - warp-svc listen address. (service not support yet, hardcode to `localhost`)~~
+- **SOCK_PORT** - local socks5 listen port. (default: `1080`)
+- **HTTP_PORT** - local http listen port. (default: `1081`)
+- **HTTPS_PORT** - local https listen port. (default: `1082`)
+- **PROXY_AUTH** - local proxy's authentication. (E.g. `user:password`)
 
 ## Registration auto switch
 
@@ -58,6 +58,7 @@ but for not break the `entrypoint.sh` flow. plase do **NOT** change this part:
 
 ```xml
 <array>
+  # don't modify this part
   <dict>
     <key>organization</key>
     <string>ORGANIZATION</string>
@@ -67,21 +68,25 @@ but for not break the `entrypoint.sh` flow. plase do **NOT** change this part:
     <string>AUTH_CLIENT_ID</string>
     <key>auth_client_secret</key>
     <string>AUTH_CLIENT_SECRET</string>
+    <key>unique_client_id</key>
+    <string>UNIQUE_CLIENT_ID</string>
     <key>onboarding</key>
     <false />
   </dict>
+  # add your custom part down here
 </array>
 ```
 
-## MDM settings in cloudflare Zero Trust dashboard
+## Setting MDM in dashboard
 
+1. go cloudflare Zero Trust dashboard.
 1. create your org team in words range: `[a-zA-Z0-9-]` and remember your `ORGANIZATION` (set org name to ./secrets).
-2. create a `Access -> Service Authentication -> Service Token` and get `AUTH_CLIENT_ID` and `AUTH_CLIENT_SECRET` from dashboard. (set to ./secrets)
-3. goto `Settings -> Warp Client -> Device settings` and add a new policy (E.g.: named "mdmPolicy").
-4. into the policy config page, add a rule to let `email` - `is` - `non_identity@[your_org_name].cloudflareaccess.com` in expression.
-5. go down and find `Service mode` to set `proxy` mode and port `41080`. [why must set proxy mode in policy?](https://developers.cloudflare.com/cloudflare-one/connections/connect-devices/warp/deployment/mdm-deployment/parameters/#service_mode)
-6. and done other settings if your want.
-7. then save it.
+1. create a `Access -> Service Authentication -> Service Token` and get `AUTH_CLIENT_ID` and `AUTH_CLIENT_SECRET` from dashboard. (set to ./secrets)
+1. goto `Settings -> Warp Client -> Device settings` and add a new policy (E.g.: named "mdmPolicy").
+1. into the policy config page, add a rule to let `email` - `is` - `non_identity@[your_org_name].cloudflareaccess.com` in expression. (Or filter by device uuid)
+1. go down and find `Service mode` to set `proxy` mode and port `41080`. [why must set proxy mode in policy?](https://developers.cloudflare.com/cloudflare-one/connections/connect-devices/warp/deployment/mdm-deployment/parameters/#service_mode)
+1. modify other settings if your want.
+1. then save it.
 
 ## Run with ghcr.io
 
@@ -140,7 +145,7 @@ Example (run after build):
   ./autorun.sh -t beta-1 -c podman -r -n warpod-beta -p 2080-2082:1080-1082 -e WARP_LISTEN_PORT=21080 --secret WARP_LICENSE=LICENSE
 ```
 
-## Example
+## Example and tips
 
 test run with podman on rockylinux 8.9:
 
@@ -206,13 +211,12 @@ gost config: /var/lib/cloudflare-warp/gost.yaml
       curl -x http://<auth:pass>@<container_ip>:<gost_port> https://ip-api.com/json (outside container)
 ```
 
-## Other
-
-you can use `ADD sources.list /etc/apt/sources.list` from Dockerfile if you need a apt source mirror by *.edu.cn.
-
-and you can download another version of `gost.tar.gz` by yourself, and put it in the same directory with Dockerfile.
-
-At last, you can modify the `entrypoint.sh` to add more `gost` listen port or args. for example, add a local dns server or local network proxy.
+> [!TIP]
+> you can use `ADD sources.list /etc/apt/sources.list` from Dockerfile if you need a apt source mirror by *.edu.cn.
+> 
+> and you can download another version of `gost.tar.gz` by yourself, and put it in the same directory with Dockerfile.
+> 
+> At last, you can modify the `entrypoint.sh` to add more `gost` listen port or args. for example, add a local dns server or local network proxy.
 
 ## License
 

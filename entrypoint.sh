@@ -7,6 +7,7 @@ warp_license=$WARP_LICENSE
 warp_org_id=$WARP_ORG_ID
 auth_client_id=$WARP_AUTH_CLIENT_ID
 auth_client_secret=$WARP_AUTH_CLIENT_SECRET
+unique_client_id=${WARP_UNIQUE_CLIENT_ID:-$(cat /proc/sys/kernel/random/uuid)}
 warp_listen_port=${WARP_LISTEN_PORT:-41080}
 sock_port=${SOCK_PORT:-1080}
 http_port=${HTTP_PORT:-1081}
@@ -52,6 +53,12 @@ fi
 if [ "$auth_client_secret" ]; then
     if ! echo "$auth_client_secret" | grep -qE '^[a-z0-9]{64}$'; then
         echo "[!] Error: WARP_AUTH_CLIENT_SECRET invalid! (e.g.: 1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef)"
+        exit 1
+    fi
+fi
+if [ "$unique_client_id" ]; then
+    if ! echo "$unique_client_id" | grep -qE '^[a-z0-9]{8}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{4}-[a-z0-9]{12}$'; then
+        echo "[!] Error: WARP_UNIQUE_CLIENT_ID invalid! (e.g.: 12345678-1234-1234-1234-1234567890ab)"
         exit 1
     fi
 fi
@@ -117,7 +124,11 @@ done
 # have warp_org_id, auth_client_id, auth_client_secret, but not registered
 if [ -n "$warp_org_id" ] && [ -n "$auth_client_id" ] && [ -n "$auth_client_secret" ]; then
     # mdm file exists, but not registered
-    sed -e "s/ORGANIZATION/$warp_org_id/g" -e "s/AUTH_CLIENT_ID/$auth_client_id/g" -e "s/AUTH_CLIENT_SECRET/$auth_client_secret/g" $warp_path/mdm.xml.example >$warp_path/mdm.xml
+    sed -e "s/ORGANIZATION/$warp_org_id/g" \
+        -e "s/AUTH_CLIENT_ID/$auth_client_id/g" \
+        -e "s/AUTH_CLIENT_SECRET/$auth_client_secret/g" \
+        -e "s/UNIQUE_CLIENT_ID/$unique_client_id/g" \
+        $warp_path/mdm.xml.example >$warp_path/mdm.xml
     echo "[+] Registering mdm save to: $warp_path/mdm.xml"
     echo "[+] you should set policy from Zero Trust dashboard."
     echo "    documents: https://developers.cloudflare.com/cloudflare-one/connections/connect-devices/warp/deployment/mdm-deployment/"
@@ -127,10 +138,10 @@ else
     # license exsits, but not registered
     if [ -n "$warp_license" ]; then
         echo "[+] Set warp license to $warp_license ... $(/usr/bin/warp-cli registration license $warp_license)"
-    else
-        # no license, but not registered
-        echo "[+] New registration generated ... $(/usr/bin/warp-cli registration new)"
     fi
+    # no license, but not registered
+    echo "[+] New registration generated ... $(/usr/bin/warp-cli registration new)"
+
     # change the operation mode to proxy and set the port (mdm is not needed in this case, should set mode and port in Zero Trust dashboard.)
     echo "[+] Set warp mode to proxy ... $(/usr/bin/warp-cli mode proxy)"
     echo "[+] Set proxy listen to $warp_listen_port ... $(/usr/bin/warp-cli proxy port $warp_listen_port)"
@@ -141,15 +152,16 @@ echo "[+] Turn ON warp ... $(/usr/bin/warp-cli connect)"
 
 # wait for warp status to be connecting
 echo "[+] Waiting for warp to connect..."
-while [ -z "$(/usr/bin/warp-cli status 2>/dev/null | grep 'Connected')" ]; do
+while [ -z "$(/usr/bin/warp-cli status 2>/dev/null | grep 'Stauts' | grep 'Connected')" ]; do
     # loading print dots at same line
-    if [ -z "$(/usr/bin/warp-cli status 2>/dev/null | grep 'Disconnection')" ]; then
+    if [ -z "$(/usr/bin/warp-cli status 2>/dev/null | grep 'Stauts' | grep 'Disconnection')" ]; then
         echo -n "."
     else
         #clear line and print new line
         echo -ne "\033[2K\r[!] warp connection failed! retrying..."
-        /usr/bin/warp-cli registration delete >/dev/null 2>&1
-        /usr/bin/warp-cli connect >/dev/null 2>&1
+        /usr/bin/warp-cli registration delete >/dev/null 2>&1 &&
+            /usr/bin/warp-cli registration new >/dev/null 2>&1 &&
+            /usr/bin/warp-cli connect >/dev/null 2>&1
     fi
     sleep 5
 done
@@ -194,14 +206,18 @@ echo "      curl -x http://<auth:pass>@<container_ip>:<gost_port> https://ip-api
 connect_lost=false
 while true; do
     # loading print dots at same line
-    if [ -n "$(/usr/bin/warp-cli status 2>/dev/null | grep 'Disconnection')" ]; then
+    if [ -n "$(/usr/bin/warp-cli status 2>/dev/null | grep 'Status' | grep -v 'Connected')" ]; then
         if [ "$connect_lost" = false ]; then
             #clear line and print new line
             echo -e "\033[2K\r[!] warp connection lost! retrying..."
             connect_lost=true
-            /usr/bin/warp-cli registration delete >/dev/null 2>&1
-            /usr/bin/warp-cli connect >/dev/null 2>&1
+            /usr/bin/warp-cli registration delete >/dev/null 2>&1 &&
+                /usr/bin/warp-cli registration new >/dev/null 2>&1 &&
+                /usr/bin/warp-cli mode proxy >/dev/null 2>&1 &&
+                /usr/bin/warp-cli proxy port $warp_listen_port >/dev/null 2>&1 &&
+                /usr/bin/warp-cli connect >/dev/null 2>&1
         fi
+        /usr/bin/warp-cli connect >/dev/null 2>&1
         echo -n "."
     else
         if [ "$connect_lost" = true ]; then

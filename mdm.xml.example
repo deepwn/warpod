@@ -8,6 +8,8 @@
     <string>AUTH_CLIENT_ID</string>
     <key>auth_client_secret</key>
     <string>AUTH_CLIENT_SECRET</string>
+    <key>unique_client_id</key>
+    <string>UNIQUE_CLIENT_ID</string>
     <key>onboarding</key>
     <false />
   </dict>
