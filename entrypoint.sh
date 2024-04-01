@@ -103,18 +103,30 @@ elif [ "$https_port" -lt 1024 ] || [ "$https_port" -gt 65535 ]; then
 fi
 
 # start dbus
-echo "[+] Starting dbus..."
-mkdir -p /run/dbus
-dbus-daemon --config-file=/usr/share/dbus-1/system.conf
+if [ -n "$(pgrep dbus-daemon)" ]; then
+    echo "[+] dbus already running!"
+else
+    echo "[+] Starting dbus..."
+    mkdir -p /run/dbus
+    dbus-daemon --config-file=/usr/share/dbus-1/system.conf
+fi
 
 # bypass warp's TOS
-echo "[+] Bypassing warp's TOS..."
-mkdir -p /root/.local/share/warp
-echo -n 'yes' >/root/.local/share/warp/accepted-tos.txt
+if [ -f "/root/.local/share/warp/accepted-tos.txt" ]; then
+    echo "[+] warp's TOS already accepted!"
+else
+    echo "[+] Bypassing warp's TOS..."
+    mkdir -p /root/.local/share/warp
+    echo -n 'yes' >/root/.local/share/warp/accepted-tos.txt
+fi
 
 # start warp-svc in background
-echo "[+] Starting warp-svc..."
-nohup /usr/bin/warp-svc >/dev/null 2>&1 &
+if [ -n "$(pgrep warp-svc)" ]; then
+    echo "[+] warp-svc already running!"
+else
+    echo "[+] Starting warp-svc..."
+    nohup /usr/bin/warp-svc >/dev/null 2>&1 &
+fi
 
 # wait for warp-svc to start
 while [ -z "$(/usr/bin/warp-cli status 2>/dev/null | grep 'Status')" ]; do
@@ -152,17 +164,8 @@ echo "[+] Turn ON warp ... $(/usr/bin/warp-cli connect)"
 
 # wait for warp status to be connecting
 echo "[+] Waiting for warp to connect..."
-while [ -z "$(/usr/bin/warp-cli status 2>/dev/null | grep 'Stauts' | grep 'Connected')" ]; do
-    # loading print dots at same line
-    if [ -z "$(/usr/bin/warp-cli status 2>/dev/null | grep 'Stauts' | grep 'Disconnection')" ]; then
-        echo -n "."
-    else
-        #clear line and print new line
-        echo -ne "\033[2K\r[!] warp connection failed! retrying..."
-        /usr/bin/warp-cli registration delete >/dev/null 2>&1 &&
-            /usr/bin/warp-cli registration new >/dev/null 2>&1 &&
-            /usr/bin/warp-cli connect >/dev/null 2>&1
-    fi
+while [ -z "$(/usr/bin/warp-cli status 2>/dev/null | grep 'Status' | grep 'Connected')" ]; do
+    echo -n "."
     sleep 5
 done
 
@@ -179,7 +182,7 @@ else
     if [ -n "$proxy_auth" ]; then
         proxy_auth="${proxy_auth}@"
     fi
-    /usr/bin/gost -L "socks5://${proxy_auth}0.0.0.0:$sock_port" -L "http://${proxy_auth}0.0.0.0:$http_port" -L "https://${proxy_auth}0.0.0.0:$https_port" -F $warp_proxy_url -O yaml >$gost_conf
+    /usr/bin/gost -L "socks5://${proxy_auth}0.0.0.0:$sock_port" -L "http://${proxy_auth}0.0.0.0:$http_port" -L "https://${proxy_auth}0.0.0.0:$https_port" -F "$warp_proxy_url" -O yaml >$gost_conf
     echo "gost config generated: $gost_conf"
 fi
 
@@ -206,15 +209,13 @@ echo "      curl -x http://<auth:pass>@<container_ip>:<gost_port> https://ip-api
 connect_lost=false
 while true; do
     # loading print dots at same line
-    if [ -n "$(/usr/bin/warp-cli status 2>/dev/null | grep 'Status' | grep -v 'Connected')" ]; then
+    if [ -z "$(/usr/bin/warp-cli status | grep 'Status' | grep 'Connected')" ]; then
         if [ "$connect_lost" = false ]; then
             #clear line and print new line
             echo -e "\033[2K\r[!] warp connection lost! retrying..."
             connect_lost=true
             /usr/bin/warp-cli registration delete >/dev/null 2>&1 &&
                 /usr/bin/warp-cli registration new >/dev/null 2>&1 &&
-                /usr/bin/warp-cli mode proxy >/dev/null 2>&1 &&
-                /usr/bin/warp-cli proxy port $warp_listen_port >/dev/null 2>&1 &&
                 /usr/bin/warp-cli connect >/dev/null 2>&1
         fi
         /usr/bin/warp-cli connect >/dev/null 2>&1
@@ -223,6 +224,10 @@ while true; do
         if [ "$connect_lost" = true ]; then
             connect_lost=false
             echo -e "\033[2K\r[+] warp reconnected!"
+            # restart gost
+            cd $warp_path
+            pkill -f gost &&
+                nohup /usr/bin/gost -C $gost_conf >$warp_path/gost.log 2>&1 &
         fi
     fi
     sleep 5

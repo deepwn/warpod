@@ -27,8 +27,8 @@ You can use `PORXY_AUTH` to set a proxy's authentication if need.
 ## Environment Variables
 
 - **WARP_ORG_ID** - WARP MDM organization ID. (E.g. `deepwn`)
-- **WARP_AUTH_CLIENT_ID** - WARP MDM client ID. (E.g. `xxxxxxxxxxxxxxxxxxxxxxxxxx.access`)
-- **WARP_AUTH_CLIENT_SECRET** - WARP MDM client secret. (E.g. `xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx`)
+- **WARP_AUTH_CLIENT_ID** - WARP MDM client ID. (E.g. `[a-z0-9]{32}` with subfix `.access`)
+- **WARP_AUTH_CLIENT_SECRET** - WARP MDM client secret. (E.g. `[a-z0-9]{64}`)
 - **WARP_UNIQUE_CLIENT_ID** - WARP MDM unique client ID. (E.g. `12345678-1234-1234-1234-123456789abc`)
 - **WARP_LICENSE** - WARP MDM license key. (E.g. `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
 - **WARP_LISTEN_PORT** - warp-svc listen port. (default: `41080`)
