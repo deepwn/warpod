@@ -29,14 +29,14 @@ You can use `PORXY_AUTH` to set a proxy's authentication if need.
 - **WARP_ORG_ID** - WARP MDM organization ID. (E.g. `deepwn`)
 - **WARP_AUTH_CLIENT_ID** - WARP MDM client ID. (E.g. `[a-z0-9]{32}` with subfix `.access`)
 - **WARP_AUTH_CLIENT_SECRET** - WARP MDM client secret. (E.g. `[a-z0-9]{64}`)
-- **WARP_UNIQUE_CLIENT_ID** - WARP MDM unique client ID. (E.g. `12345678-1234-1234-1234-123456789abc`)
-- **WARP_LICENSE** - WARP MDM license key. (E.g. `xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx`)
+- **WARP_UNIQUE_CLIENT_ID** - WARP MDM unique client ID.
+- **WARP_LICENSE** - WARP MDM license key.
 - **WARP_LISTEN_PORT** - warp-svc listen port. (default: `41080`)
 - ~~**WARP_LISTEN_ADDR** - warp-svc listen address. (service not support yet, hardcode to `localhost`)~~
 - **SOCK_PORT** - local socks5 listen port. (default: `1080`)
 - **HTTP_PORT** - local http listen port. (default: `1081`)
 - **HTTPS_PORT** - local https listen port. (default: `1082`)
-- **PROXY_AUTH** - local proxy's authentication. (E.g. `user:password`)
+- **PROXY_AUTH** - local proxy's authentication. (default `None`, E.g. `user:password`)
 
 ## Registration auto switch
 
