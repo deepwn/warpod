@@ -107,7 +107,8 @@ if [ -n "$(pgrep dbus-daemon)" ]; then
     echo "[+] dbus already running!"
 else
     echo "[+] Starting dbus..."
-    mkdir -p /run/dbus
+    mkdir -p /run/dbus >/dev/null 2>&1
+    rm -rf /run/dbus/pid >/dev/null 2>&1
     dbus-daemon --config-file=/usr/share/dbus-1/system.conf
 fi
 
