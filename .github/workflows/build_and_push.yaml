@@ -64,7 +64,9 @@ jobs:
               id: meta
               uses: docker/metadata-action@v5
               with:
-                  images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                  images: |
+                      ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+                      evil7x/warpod
                   # Extracts the version from the tag or uses the input value
                   tags: |
                       type=raw,value=${{ github.event.inputs.tags }},enable=${{ !!github.event.inputs.tags }}
